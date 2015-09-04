@@ -13,6 +13,7 @@
 #include <math.h>
 #include <iostream>
 #include <iomanip>
+#include <mutex>
 #include "common.h"
 
 #define TTL 25;
@@ -20,6 +21,7 @@
 
 using namespace std;
 
+mutex mtx;
 
 struct routing_Table{
 	int CID;
@@ -76,11 +78,16 @@ void *interface1(void *arg){
 		if(recvPacket!=NULL){
 
 			cout<<"This is interface1!"<<endl;
-			// sleep(0.1);
+			sleep(0.1);
 		hdr = recvPacket->accessHeader();
 		//sh->flag=1;
 		type = hdr->getOctet(0);
 		//receive update packet: [type+cid+#hops]
+
+		//<start> add for mutex issue - Yao0902
+		// mtx.lock();
+		//<start> add for mutex issue - Yao0902
+
 		if(type==(char)0x02){
 			int k=0;
 
@@ -93,17 +100,15 @@ void *interface1(void *arg){
 			temp->hopNum=hopnum;
 			temp->nextrow=NULL;
 			temp->previous=NULL;
-			// updated in 0903 start
-			// time_t t=time(0);
-			int t=0;
-			// updated in 0903 end
+			time_t t=time(0);
 			temp->TtoE=t+TTL;
+
 			ptr=sh->rtable;
 			//update the routing table
             while(ptr!=NULL){
 					if(ptr->CID==temp->CID){
 						k=1;
-						if(ptr->hopNum >= temp->hopNum){
+						if(ptr->hopNum > temp->hopNum){
 
 							ptr->interf=1;
 							ptr->hopNum=temp->hopNum;
@@ -149,9 +154,11 @@ void *interface1(void *arg){
 			cid=hdr->getIntegerInfo(1);
 			hid=hdr->getIntegerInfo(5);
 			//find the path in pending table
+
 			while(ptr!=NULL){
 				if(ptr->rCID==cid && ptr->HID==hid){
 					interface=ptr->interf;
+
 					k=1;
 					//decided which interface should send the packet
 					switch(interface){
@@ -199,10 +206,7 @@ void *interface1(void *arg){
 			ptemp->rCID=cid;
 			ptemp->HID=hid;
 			ptemp->interf=1;
-			// updated in 0903 start
-			// time_t t=time(0);
-			int t=0;
-			// updated in 0903 end
+			time_t t=time(0);
 			ptemp->TtoE=t+rTTL;
 			ptemp->nextrow=NULL;
 			ptemp->previous=NULL;
@@ -217,6 +221,7 @@ void *interface1(void *arg){
 				}
 				pptr=pptr->nextrow;
 			}
+
 			if(k==0){
 				ptemp->nextrow=sh->ptable;
 				sh->ptable->previous=ptemp;
@@ -257,14 +262,15 @@ void *interface1(void *arg){
 			//cout<<"Cannot found such content!"<<endl;
 		}
 
+		
+
 		struct routing_Table *p=NULL;
 		p=sh->rtable;
 		cout<<"The Routing Table is:"<<endl;
 		cout<<"ContentID"<<setw(10)<<"Interface"<<setw(6)<<"#Hops"<<setw(5)<<"TtoE"<<endl;
 		while(p->nextrow!=NULL){
 			cout<<setw(7)<<p->CID<<setw(10)<<p->interf;
-			// cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
-			cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-0<<endl;
+			cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
 			p=p->nextrow;
 		}
 
@@ -274,10 +280,13 @@ void *interface1(void *arg){
 		cout<<"RequstCID"<<setw(7)<<"HostID"<<setw(10)<<"Interface"<<setw(10)<<"TimeToExp"<<endl;
 		while(t->nextrow!=NULL){
 			cout<<setw(7)<<t->rCID<<setw(7)<<t->HID;
-			// cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
-			cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-0<<endl;
+			cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
 			t=t->nextrow;
 		}
+
+		//<start> add for mutex issue - Yao0902
+		// mtx.unlock();
+		//<end> add for mutex issue - Yao0902
 	}
 
 	}
@@ -307,6 +316,10 @@ void *interface2(void *arg){
 			hdr = recvPacket->accessHeader();
 			type = hdr->getOctet(0);
 
+			//<start> add for mutex issue - Yao0902
+			// mtx.lock();
+			//<start> add for mutex issue - Yao0902
+
 			//receive update packet: [type+cid+#hops]
 			if(type==(char)0x02){
 				int k=0;
@@ -320,10 +333,7 @@ void *interface2(void *arg){
 				temp->hopNum=hopnum;
 				temp->nextrow=NULL;
 				temp->previous=NULL;
-				// updated in 0903 start
-				// time_t t=time(0);
-				int t=0;
-				// updated in 0903 end
+				time_t t=time(0);
 				temp->TtoE=t+TTL;
 
 				ptr=sh->rtable;
@@ -332,7 +342,7 @@ void *interface2(void *arg){
 					while(ptr!=NULL){
 						if(ptr->CID==temp->CID){
 							k=1;
-							if(ptr->hopNum >= temp->hopNum){
+							if(ptr->hopNum > temp->hopNum){
 
 								ptr->interf=2;
 								ptr->hopNum=temp->hopNum;
@@ -423,10 +433,7 @@ void *interface2(void *arg){
 				ptemp->rCID=cid;
 				ptemp->HID=hid;
 				ptemp->interf=2;
-				// updated in 0903 start
-				// time_t t=time(0);
-				int t=0;
-				// updated in 0903 end
+				time_t t=time(0);
 				ptemp->TtoE=t+rTTL;
 				ptemp->nextrow=NULL;
 				ptemp->previous=NULL;
@@ -489,8 +496,7 @@ void *interface2(void *arg){
 			cout<<"ContentID"<<setw(10)<<"Interface"<<setw(6)<<"#Hops"<<setw(5)<<"TtoE"<<endl;
 			while(p->nextrow!=NULL){
 				cout<<setw(7)<<p->CID<<setw(10)<<p->interf;
-				// cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
-				cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-0<<endl;
+				cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
 				p=p->nextrow;
 			}
 
@@ -500,10 +506,13 @@ void *interface2(void *arg){
 			cout<<"RequstCID"<<setw(7)<<"HostID"<<setw(10)<<"Interface"<<setw(10)<<"TimeToExp"<<endl;
 			while(t->nextrow!=NULL){
 				cout<<setw(7)<<t->rCID<<setw(7)<<t->HID;
-				// cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
-				cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-0<<endl;
+				cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
 				t=t->nextrow;
 			}
+
+			//<start> add for mutex issue - Yao0902
+			// mtx.unlock();
+			//<start> add for mutex issue - Yao0902
 		}
 		}
 		return NULL;
@@ -525,7 +534,7 @@ void *interface3(void *arg){
 	int interface;
 
 	while(1){
-		// sleep(0.3);
+		sleep(0.3);
 			recvPacket = sh->recv_port3->receivePacket();
 
 
@@ -533,6 +542,10 @@ void *interface3(void *arg){
 				cout<<"This is interface 3!"<<endl;
 			hdr = recvPacket->accessHeader();
 			type = hdr->getOctet(0);
+
+			//<start> add for mutex issue - Yao0902
+			// mtx.lock();
+			//<start> add for mutex issue - Yao0902
 
 			//receive update packet: [type+cid+#hops]
 			if(type==(char)0X02){
@@ -547,9 +560,7 @@ void *interface3(void *arg){
 				temp->hopNum=hopnum;
 				temp->nextrow=NULL;
 				temp->previous=NULL;
-				// time_t t=time(0);
-				int t=0;
-				// updated in 0903 end
+				time_t t=time(0);
 				temp->TtoE=t+TTL;
 
 				ptr=sh->rtable;
@@ -557,12 +568,12 @@ void *interface3(void *arg){
 					while(ptr!=NULL){
 						if(ptr->CID==temp->CID){
 							k=1;
-							if(ptr->hopNum >= temp->hopNum){
+							if(ptr->hopNum > temp->hopNum){
 
 								ptr->interf=3;
 								ptr->hopNum=temp->hopNum;
 								ptr->TtoE=temp->TtoE;
-								//broadcast updated packet
+
 								hdr->setIntegerInfo(hopnum+1,5);
 								sh->send_port2->sendPacket(recvPacket);
 								sh->send_port1->sendPacket(recvPacket);
@@ -580,7 +591,6 @@ void *interface3(void *arg){
 						sh->rtable->previous=temp;
 						sh->rtable=temp;
 
-						//broadcast updated packet
 						hdr->setIntegerInfo(hopnum+1,5);
 						sh->send_port2->sendPacket(recvPacket);
 						sh->send_port1->sendPacket(recvPacket);
@@ -588,7 +598,8 @@ void *interface3(void *arg){
 					};
 				//}
 
-	
+				//broadcast updated packet
+				
 
 			}
 			//receive response packet: [type+cid+hid+payload]
@@ -647,9 +658,7 @@ void *interface3(void *arg){
 				ptemp->rCID=cid;
 				ptemp->HID=hid;
 				ptemp->interf=3;
-				// time_t t=time(0);
-				int t=0;
-				// updated in 0903 end
+				time_t t=time(0);
 				ptemp->TtoE=t+rTTL;
 				ptemp->nextrow=NULL;
 				ptemp->previous=NULL;
@@ -711,8 +720,7 @@ void *interface3(void *arg){
 			cout<<"ContentID"<<setw(10)<<"Interface"<<setw(6)<<"#Hops"<<setw(5)<<"TtoE"<<endl;
 			while(p->nextrow!=NULL){
 				cout<<setw(7)<<p->CID<<setw(10)<<p->interf;
-				// cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
-				cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-0<<endl;
+				cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
 				p=p->nextrow;
 			}
 
@@ -722,10 +730,14 @@ void *interface3(void *arg){
 			cout<<"RequstCID"<<setw(7)<<"HostID"<<setw(10)<<"Interface"<<setw(10)<<"TimeToExp"<<endl;
 			while(t->nextrow!=NULL){
 				cout<<setw(7)<<t->rCID<<setw(7)<<t->HID;
-				// cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
-				cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-0<<endl;
+				cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
 				t=t->nextrow;
 			}
+
+			//<start> add for mutex issue - Yao0902
+			// mtx.unlock();
+			//<start> add for mutex issue - Yao0902
+
 			}
 
 		}
@@ -749,12 +761,16 @@ void *interface4(void *arg){
 	int interface;
 
 	while(1){
-		// sleep(0.4);
+		sleep(0.4);
 		recvPacket = sh->recv_port4->receivePacket();
 		if(recvPacket!=NULL){
             
 		hdr = recvPacket->accessHeader();
 		type = hdr->getOctet(0);
+
+		//<start> add for mutex issue - Yao0902
+		// mtx.lock();
+		//<start> add for mutex issue - Yao0902
 
 
 		//receive update packet: [type+cid+#hops]
@@ -770,10 +786,7 @@ void *interface4(void *arg){
 			temp->hopNum=hopnum;
 			temp->nextrow=NULL;
 			temp->previous=NULL;
-			// updated in 0903 start
-			// time_t t=time(0);
-			int t=0;
-			// updated in 0903 end
+			time_t t=time(0);
 			temp->TtoE=t+TTL;
 
 			ptr=sh->rtable;
@@ -782,7 +795,7 @@ void *interface4(void *arg){
 				while(ptr!=NULL){
 					if(ptr->CID==temp->CID){
 						k=1;
-						if(ptr->hopNum >= temp->hopNum){
+						if(ptr->hopNum > temp->hopNum){
 
 							ptr->interf=4;
 							ptr->hopNum=temp->hopNum;
@@ -806,7 +819,6 @@ void *interface4(void *arg){
 					sh->rtable->previous=temp;
 					sh->rtable=temp;
 
-					//broadcast updated packet
 					hdr->setIntegerInfo(hopnum+1,5);
 					sh->send_port2->sendPacket(recvPacket);
 					sh->send_port3->sendPacket(recvPacket);
@@ -814,6 +826,9 @@ void *interface4(void *arg){
 				}
 			//}
 			//delete ptr;
+
+
+			
 
 		}
 		//receive response packet: [type+cid+hid+payload]
@@ -873,10 +888,7 @@ void *interface4(void *arg){
 			ptemp->rCID=cid;
 			ptemp->HID=hid;
 			ptemp->interf=4;
-			// updated in 0903 start
-			// time_t t=time(0);
-			int t=0;
-			// updated in 0903 end
+			time_t t=time(0);
 			ptemp->TtoE=t+rTTL;
 			ptemp->nextrow=NULL;
 			ptemp->previous=NULL;
@@ -941,8 +953,7 @@ void *interface4(void *arg){
 		cout<<"ContentID"<<setw(10)<<"Interface"<<setw(6)<<"#Hops"<<setw(5)<<"TtoE"<<endl;
 		while(p->nextrow!=NULL){
 			cout<<setw(7)<<p->CID<<setw(10)<<p->interf;
-			// cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
-			cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-0<<endl;
+			cout<<setw(5)<<p->hopNum<<setw(7)<<p->TtoE-time(0)<<endl;
 			p=p->nextrow;
 		}
 
@@ -952,10 +963,14 @@ void *interface4(void *arg){
 		cout<<"RequstCID"<<setw(7)<<"HostID"<<setw(10)<<"Interface"<<setw(10)<<"TimeToExp"<<endl;
 		while(t->nextrow!=NULL){
 			cout<<setw(7)<<t->rCID<<setw(7)<<t->HID;
-			// cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
-			cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-0<<endl;
+			cout<<setw(9)<<t->interf<<setw(10)<<t->TtoE-time(0)<<endl;
 			t=t->nextrow;
 		}
+
+		//<start> add for mutex issue - Yao0902
+		// mtx.unlock();
+		//<start> add for mutex issue - Yao0902
+
 		}
 	}
 	return NULL;
@@ -965,15 +980,19 @@ void *timecounter(void *arg){
 	struct cShared *sh = (struct cShared *)arg;
 
 	while(1){
-		sleep(1);
+		// sleep(1);
 		struct routing_Table *p=NULL;
 		p=sh->rtable;
 		struct pending_Table *t=NULL;
 		t=sh->ptable;
+
+		//<start> add for mutex issue - Yao0902
+		// mtx.lock();
+		//<start> add for mutex issue - Yao0902
+
 		while(p->nextrow!=NULL){
 			p->TtoE--;
-			// if(p->TtoE<time(0)){
-			if(p->TtoE<0){
+			if(p->TtoE<time(0)){
 				if(p->previous!=NULL&&p->nextrow!=NULL){
 					p->previous->nextrow=p->nextrow;
 					p->nextrow->previous=p->previous;
@@ -995,8 +1014,7 @@ void *timecounter(void *arg){
 
 		while(t->nextrow!=NULL){
 			t->TtoE--;
-			// if(t->TtoE<time(0)){
-			if(t->TtoE<0){
+			if(t->TtoE<time(0)){
 				if(t->previous!=NULL&&t->nextrow!=NULL){
 					t->previous->nextrow=t->nextrow;
 					t->nextrow->previous=t->previous;
@@ -1012,6 +1030,10 @@ void *timecounter(void *arg){
 			if(t->nextrow!=NULL)
 				t=t->nextrow;
 		}
+
+		//<start> add for mutex issue - Yao0902
+		// mtx.unlock();
+		//<start> add for mutex issue - Yao0902
 	}
 
 
