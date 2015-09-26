@@ -12,6 +12,7 @@
 #include <float.h>
 #include <math.h>
 #include <iostream>
+#include <time.h>
 #include <iomanip>
 #include "common.h"
 
@@ -53,6 +54,7 @@ struct cShared{
 	SendingPort* send_port4;
 	routing_Table* rtable;
 	pending_Table* ptable;
+	int LuckNum; //to decide which interface should down temporarily
 	//int flag=0;
 };
 
@@ -71,8 +73,17 @@ void *interface1(void *arg){
 	int hid;
 	int hopnum;
 	int interface;
+
+
 	while(1){
-		recvPacket = sh->recv_port1->receivePacket();
+		int lNum = sh->LuckNum;
+
+		if(lNum == 1){
+			recvPacket = NULL;
+			// cout<<"##Interface1 is down...##"<<endl;
+		}else{
+			recvPacket = sh->recv_port1->receivePacket();
+		}
 		if(recvPacket!=NULL){
 
 			cout<<"This is interface1!"<<endl;
@@ -111,9 +122,12 @@ void *interface1(void *arg){
 
 							//broadcast updated packet
 							hdr->setIntegerInfo(hopnum+1,5);
-							sh->send_port2->sendPacket(recvPacket);
-							sh->send_port3->sendPacket(recvPacket);
-							sh->send_port4->sendPacket(recvPacket);
+							if(lNum != 2)
+								sh->send_port2->sendPacket(recvPacket);
+							if(lNum != 3)
+								sh->send_port3->sendPacket(recvPacket);
+							if(lNum != 4)
+								sh->send_port4->sendPacket(recvPacket);
 						}
 						else if(ptr->hopNum==temp->hopNum&&ptr->interf==temp->interf){
 							ptr->TtoE=temp->TtoE;
@@ -130,9 +144,12 @@ void *interface1(void *arg){
 
 					//broadcast updated packet
 					hdr->setIntegerInfo(hopnum+1,5);
-					sh->send_port2->sendPacket(recvPacket);
-					sh->send_port3->sendPacket(recvPacket);
-					sh->send_port4->sendPacket(recvPacket);
+					if(lNum != 2)
+						sh->send_port2->sendPacket(recvPacket);
+					if(lNum != 3)
+						sh->send_port3->sendPacket(recvPacket);
+					if(lNum != 4)
+						sh->send_port4->sendPacket(recvPacket);
 				}
 
 
@@ -156,16 +173,20 @@ void *interface1(void *arg){
 					//decided which interface should send the packet
 					switch(interface){
 						case 1:
-							sh->send_port1->sendPacket(recvPacket);
+							if(lNum != 1)
+								sh->send_port1->sendPacket(recvPacket);
 							break;
 						case 2:
-							sh->send_port2->sendPacket(recvPacket);
+							if(lNum != 2)
+								sh->send_port2->sendPacket(recvPacket);
 							break;
 						case 3:
-							sh->send_port3->sendPacket(recvPacket);
+							if(lNum != 3)
+								sh->send_port3->sendPacket(recvPacket);
 							break;
 						case 4:
-							sh->send_port4->sendPacket(recvPacket);
+							if(lNum != 4)
+								sh->send_port4->sendPacket(recvPacket);
 							break;
 						default:
 							cout<<"Cannot found path!"<<endl;
@@ -232,16 +253,20 @@ void *interface1(void *arg){
 					//decided which interface should send the packet
 					switch(interface){
 						case 1:
-							sh->send_port1->sendPacket(recvPacket);
+							if(lNum != 1)
+								sh->send_port1->sendPacket(recvPacket);
 							break;
 						case 2:
-							sh->send_port2->sendPacket(recvPacket);
+							if(lNum != 2)
+								sh->send_port2->sendPacket(recvPacket);
 							break;
 						case 3:
-							sh->send_port3->sendPacket(recvPacket);
+							if(lNum != 3)
+								sh->send_port3->sendPacket(recvPacket);
 							break;
 						case 4:
-							sh->send_port4->sendPacket(recvPacket);
+							if(lNum != 4)
+								sh->send_port4->sendPacket(recvPacket);
 							break;
 						default:
 							cout<<"Cannot found path!"<<endl;
@@ -298,9 +323,19 @@ void *interface2(void *arg){
 		int hid;
 		int hopnum;
 		int interface;
+
+		
 		while(1){
 			// sleep(0.2);
-			recvPacket = sh->recv_port2->receivePacket();
+			int lNum = sh->LuckNum;
+
+			if(lNum == 2){
+				recvPacket = NULL;
+				// cout<<"##Interface2 is down...##"<<endl;
+			}else{
+				recvPacket = sh->recv_port2->receivePacket();
+			}
+
 			if(recvPacket!=NULL){
 
 			cout<<"This is interface2!"<<endl;
@@ -340,9 +375,12 @@ void *interface2(void *arg){
 
 								//broadcast updated packet
 								hdr->setIntegerInfo(hopnum+1,5);
-								sh->send_port1->sendPacket(recvPacket);
-								sh->send_port3->sendPacket(recvPacket);
-								sh->send_port4->sendPacket(recvPacket);
+								if(lNum != 1)
+									sh->send_port1->sendPacket(recvPacket);
+								if(lNum != 3)
+									sh->send_port3->sendPacket(recvPacket);
+								if(lNum != 4)
+									sh->send_port4->sendPacket(recvPacket);
 							}
 							else if(ptr->hopNum==temp->hopNum && ptr->interf==temp->interf){
 								ptr->TtoE=temp->TtoE;
@@ -358,9 +396,12 @@ void *interface2(void *arg){
 
 						//broadcast updated packet
 						hdr->setIntegerInfo(hopnum+1,5);
-						sh->send_port1->sendPacket(recvPacket);
-						sh->send_port3->sendPacket(recvPacket);
-						sh->send_port4->sendPacket(recvPacket);
+						if(lNum != 1)
+							sh->send_port1->sendPacket(recvPacket);
+						if(lNum != 3)
+							sh->send_port3->sendPacket(recvPacket);
+						if(lNum != 4)
+							sh->send_port4->sendPacket(recvPacket);
 					}
 
 				
@@ -383,16 +424,20 @@ void *interface2(void *arg){
 						//decided which interface should send the packet
 						switch(interface){
 							case 1:
-								sh->send_port1->sendPacket(recvPacket);
+								if(lNum != 1)
+									sh->send_port1->sendPacket(recvPacket);
 								break;
 							case 2:
-								sh->send_port2->sendPacket(recvPacket);
+								if(lNum != 2)
+									sh->send_port2->sendPacket(recvPacket);
 								break;
 							case 3:
-								sh->send_port3->sendPacket(recvPacket);
+								if(lNum != 3)
+									sh->send_port3->sendPacket(recvPacket);
 								break;
 							case 4:
-								sh->send_port4->sendPacket(recvPacket);
+								if(lNum != 4)
+									sh->send_port4->sendPacket(recvPacket);
 								break;
 							default:
 								cout<<"Cannot found path!"<<endl;
@@ -455,16 +500,20 @@ void *interface2(void *arg){
 						//decided which interface should send the packet
 						switch(interface){
 							case 1:
-								sh->send_port1->sendPacket(recvPacket);
+								if(lNum != 1)
+									sh->send_port1->sendPacket(recvPacket);
 								break;
 							case 2:
-								sh->send_port2->sendPacket(recvPacket);
+								if(lNum != 2)
+									sh->send_port2->sendPacket(recvPacket);
 								break;
 							case 3:
-								sh->send_port3->sendPacket(recvPacket);
+								if(lNum != 3)
+									sh->send_port3->sendPacket(recvPacket);
 								break;
 							case 4:
-								sh->send_port4->sendPacket(recvPacket);
+								if(lNum != 4)
+									sh->send_port4->sendPacket(recvPacket);
 								break;
 							default:
 								cout<<"Cannot found path!"<<endl;
@@ -524,9 +573,20 @@ void *interface3(void *arg){
 	int hopnum;
 	int interface;
 
+	
+
 	while(1){
 		// sleep(0.3);
-			recvPacket = sh->recv_port3->receivePacket();
+			// recvPacket = sh->recv_port3->receivePacket();
+
+		int lNum = sh->LuckNum;
+
+			if(lNum == 3){
+				recvPacket = NULL;
+				// cout<<"##Interface3 is down...##"<<endl;
+			}else{
+				recvPacket = sh->recv_port3->receivePacket();
+			}
 
 
 			if(recvPacket!=NULL){
@@ -564,9 +624,12 @@ void *interface3(void *arg){
 								ptr->TtoE=temp->TtoE;
 								//broadcast updated packet
 								hdr->setIntegerInfo(hopnum+1,5);
-								sh->send_port2->sendPacket(recvPacket);
-								sh->send_port1->sendPacket(recvPacket);
-								sh->send_port4->sendPacket(recvPacket);
+								if(lNum != 2)
+									sh->send_port2->sendPacket(recvPacket);
+								if(lNum != 1)
+									sh->send_port1->sendPacket(recvPacket);
+								if(lNum != 4)
+									sh->send_port4->sendPacket(recvPacket);
 							}
 							else if(ptr->hopNum==temp->hopNum&&ptr->interf==temp->interf){
 								ptr->TtoE=temp->TtoE;
@@ -582,9 +645,12 @@ void *interface3(void *arg){
 
 						//broadcast updated packet
 						hdr->setIntegerInfo(hopnum+1,5);
-						sh->send_port2->sendPacket(recvPacket);
-						sh->send_port1->sendPacket(recvPacket);
-						sh->send_port4->sendPacket(recvPacket);
+						if(lNum != 2)
+							sh->send_port2->sendPacket(recvPacket);
+						if(lNum != 1)
+							sh->send_port1->sendPacket(recvPacket);
+						if(lNum != 4)
+							sh->send_port4->sendPacket(recvPacket);
 					};
 				//}
 
@@ -606,16 +672,20 @@ void *interface3(void *arg){
 						//decided which interface should send the packet
 						switch(interface){
 							case 1:
-								sh->send_port1->sendPacket(recvPacket);
+								if(lNum != 1)
+									sh->send_port1->sendPacket(recvPacket);
 								break;
 							case 2:
-								sh->send_port2->sendPacket(recvPacket);
+								if(lNum != 2)
+									sh->send_port2->sendPacket(recvPacket);
 								break;
 							case 3:
-								sh->send_port3->sendPacket(recvPacket);
+								if(lNum != 3)
+									sh->send_port3->sendPacket(recvPacket);
 								break;
 							case 4:
-								sh->send_port4->sendPacket(recvPacket);
+								if(lNum != 4)
+									sh->send_port4->sendPacket(recvPacket);
 								break;
 							default:
 								cout<<"Cannot found path!"<<endl;
@@ -680,16 +750,20 @@ void *interface3(void *arg){
 						//decided which interface should send the packet
 						switch(interface){
 							case 1:
-								sh->send_port1->sendPacket(recvPacket);
+								if(lNum != 1)
+									sh->send_port1->sendPacket(recvPacket);
 								break;
 							case 2:
-								sh->send_port2->sendPacket(recvPacket);
+								if(lNum != 2)
+									sh->send_port2->sendPacket(recvPacket);
 								break;
 							case 3:
-								sh->send_port3->sendPacket(recvPacket);
+								if(lNum != 3)
+									sh->send_port3->sendPacket(recvPacket);
 								break;
 							case 4:
-								sh->send_port4->sendPacket(recvPacket);
+								if(lNum != 4)
+									sh->send_port4->sendPacket(recvPacket);
 								break;
 							default:
 								cout<<"Cannot found path!"<<endl;
@@ -748,9 +822,20 @@ void *interface4(void *arg){
 	int hopnum;
 	int interface;
 
+	
+
 	while(1){
 		// sleep(0.4);
-		recvPacket = sh->recv_port4->receivePacket();
+		// recvPacket = sh->recv_port4->receivePacket();
+		int lNum = sh->LuckNum;
+
+		if(lNum == 4){
+			recvPacket = NULL;
+			// cout<<"##Interface4 is down...##"<<endl;
+		}else{
+			recvPacket = sh->recv_port4->receivePacket();
+		}
+
 		if(recvPacket!=NULL){
             
 		hdr = recvPacket->accessHeader();
@@ -790,9 +875,15 @@ void *interface4(void *arg){
 
 							//broadcast updated packet
 							hdr->setIntegerInfo(hopnum+1,5);
-							sh->send_port2->sendPacket(recvPacket);
-							sh->send_port3->sendPacket(recvPacket);
-							sh->send_port1->sendPacket(recvPacket);
+							if(lNum != 2){
+								sh->send_port2->sendPacket(recvPacket);
+							}
+							if(lNum != 3){
+								sh->send_port3->sendPacket(recvPacket);
+							}
+							if(lNum != 1){
+								sh->send_port1->sendPacket(recvPacket);
+							}
 						}
 						else if(ptr->hopNum==temp->hopNum&&ptr->interf==temp->interf){
 							ptr->TtoE=temp->TtoE;
@@ -808,9 +899,12 @@ void *interface4(void *arg){
 
 					//broadcast updated packet
 					hdr->setIntegerInfo(hopnum+1,5);
-					sh->send_port2->sendPacket(recvPacket);
-					sh->send_port3->sendPacket(recvPacket);
-					sh->send_port1->sendPacket(recvPacket);
+					if(lNum != 2)
+						sh->send_port2->sendPacket(recvPacket);
+					if(lNum != 3)
+						sh->send_port3->sendPacket(recvPacket);
+					if(lNum != 1)
+						sh->send_port1->sendPacket(recvPacket);
 				}
 			//}
 			//delete ptr;
@@ -831,16 +925,20 @@ void *interface4(void *arg){
 					//decided which interface should send the packet
 					switch(interface){
 						case 1:
-							sh->send_port1->sendPacket(recvPacket);
+							if(lNum != 1)
+								sh->send_port1->sendPacket(recvPacket);
 							break;
 						case 2:
-							sh->send_port2->sendPacket(recvPacket);
+							if(lNum != 2)
+								sh->send_port2->sendPacket(recvPacket);
 							break;
 						case 3:
-							sh->send_port3->sendPacket(recvPacket);
+							if(lNum != 3)
+								sh->send_port3->sendPacket(recvPacket);
 							break;
 						case 4:
-							sh->send_port4->sendPacket(recvPacket);
+							if(lNum != 4)
+								sh->send_port4->sendPacket(recvPacket);
 							break;
 						default:
 							cout<<"Cannot found path!"<<endl;
@@ -907,16 +1005,20 @@ void *interface4(void *arg){
 					//decided which interface should send the packet
 					switch(interface){
 						case 1:
-							sh->send_port1->sendPacket(recvPacket);
+							if(lNum != 1)
+								sh->send_port1->sendPacket(recvPacket);
 							break;
 						case 2:
-							sh->send_port2->sendPacket(recvPacket);
+							if(lNum != 2)
+								sh->send_port2->sendPacket(recvPacket);
 							break;
 						case 3:
-							sh->send_port3->sendPacket(recvPacket);
+							if(lNum != 3)
+								sh->send_port3->sendPacket(recvPacket);
 							break;
 						case 4:
-							sh->send_port4->sendPacket(recvPacket);
+							if(lNum != 4)
+								sh->send_port4->sendPacket(recvPacket);
 							break;
 						default:
 							cout<<"Cannot found path!"<<endl;
@@ -964,12 +1066,31 @@ void *timecounter(void *arg){
 	printf("Starting TimeCounter thread\n");
 	struct cShared *sh = (struct cShared *)arg;
 
+	int tCounter = 0;
+
 	while(1){
 		sleep(1);
+
+		tCounter ++;
+
 		struct routing_Table *p=NULL;
 		p=sh->rtable;
 		struct pending_Table *t=NULL;
 		t=sh->ptable;
+
+		int lNum = sh->LuckNum;
+		if(tCounter == 30){
+			srand( (unsigned)time( NULL ) );
+  			lNum = rand()%3 + 1;
+			sh->LuckNum = lNum;
+			printf("## WARNING ##: Interface %d is picked to down now...", lNum);
+		}
+		if(tCounter >= 70){
+			sh->LuckNum = 0;
+			tCounter = 0;
+			printf("## NOTICE ##: All interfaces should be working now...");
+		}
+
 		while(p->nextrow!=NULL){
 			p->TtoE--;
 			// if(p->TtoE<time(0)){
@@ -1205,6 +1326,8 @@ int main(int argc, char *argv[]) {
 		sh->send_port4 = my_send_port4;
 		sh->rtable=rT;
 		sh->ptable=pT;
+
+		sh->LuckNum = 0;
 
 
 		pthread_t thread1;
